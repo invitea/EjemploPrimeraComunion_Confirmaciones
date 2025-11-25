@@ -1,0 +1,1812 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel de Confirmaciones — Primera Comunión Daniela</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Montserrat:wght@300;400;500;600&family=Parisienne&display=swap" rel="stylesheet" />
+
+  <style>
+    :root{
+      /* Paleta exacta de la invitación */
+      --bg: #f9f5f1;
+      --card-bg: #ffffff;
+      --muted: #f0e6d6;
+      --accent: #8e6c88;
+      --accent-2: rgba(142,108,136,0.9);
+      --map-btn: rgba(107,142,122,0.9);
+      --text: #444;
+      --muted-text: #777;
+      --shadow: rgba(0,0,0,0.10);
+      --focus-ring: rgba(142,108,136,0.18);
+      --error: #d32f2f;
+      --warning: #f57c00;
+      --success: #388e3c;
+      --info: #1976d2;
+
+      /* variables de layout */
+      --max-width: 1000px;
+      --container-padding: 18px;
+    }
+
+    *{
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body{
+      font-family: 'Montserrat', system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: 40px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Elementos decorativos de fondo */
+    .decoration {
+      position: absolute;
+      z-index: 0;
+      opacity: 0.08;
+    }
+    .decoration.circle {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      border: 2px solid var(--accent);
+      top: 10%;
+      right: 10%;
+    }
+    .decoration.flower {
+      width: 80px;
+      height: 80px;
+      background: radial-gradient(circle, var(--accent) 20%, transparent 20%),
+                  radial-gradient(circle, transparent 20%, var(--accent) 20%, transparent 30%),
+                  radial-gradient(circle, var(--accent) 10%, transparent 10%);
+      background-size: 20px 20px, 40px 40px, 20px 20px;
+      background-position: 0 0, 20px 20px, 0 40px;
+      bottom: 15%;
+      left: 8%;
+      transform: rotate(25deg);
+    }
+
+    .container{
+      max-width: var(--max-width);
+      margin: 22px auto;
+      padding: var(--container-padding);
+      position: relative;
+      z-index: 1;
+    }
+
+    header.app-header{
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 24px;
+      padding: 20px;
+      background: var(--card-bg);
+      border-radius: 16px;
+      box-shadow: 0 6px 18px var(--shadow);
+      border: 1px solid var(--muted);
+      position: relative;
+      overflow: hidden;
+    }
+
+    header.app-header::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(to right, var(--accent), var(--map-btn), var(--accent));
+    }
+
+    .logo-img{
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 50%;
+      border: 3px solid var(--accent);
+      box-shadow: 0 6px 18px var(--shadow);
+    }
+
+    h1{
+      font-size: 24px;
+      margin: 0;
+      color: var(--accent);
+      font-weight: 600;
+      font-family: 'Parisienne', cursive;
+    }
+
+    .controls{
+      display: flex;
+      gap: 12px;
+      margin: 20px 0;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .search{
+      flex: 1;
+      min-width: 200px;
+      background: var(--card-bg);
+      border: 2px solid var(--muted);
+      padding: 12px 16px;
+      border-radius: 8px;
+      color: var(--text);
+      font-family: 'Montserrat', sans-serif;
+      font-size: 14px;
+      transition: all 0.3s ease;
+    }
+
+    .search:focus{
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 6px var(--focus-ring);
+    }
+
+    .btn{
+      background: var(--accent-2);
+      color: #ffffff;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 25px;
+      font-weight: 500;
+      cursor: pointer;
+      box-shadow: 0 3px 8px rgba(142,108,136,0.3);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 13px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    .btn::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      transition: left 0.5s;
+      z-index: -1;
+    }
+
+    .btn:hover::before {
+      left: 100%;
+    }
+
+    .btn:hover{
+      transform: translateY(-2px);
+      box-shadow: 0 5px 12px rgba(142,108,136,0.4);
+    }
+
+    .btn-secondary{
+      background: transparent;
+      color: var(--accent);
+      border: 2px solid var(--accent);
+    }
+
+    .btn-secondary:hover{
+      background: var(--accent);
+      color: #ffffff;
+    }
+
+    .btn-danger{
+      background: transparent;
+      color: var(--error);
+      border: 2px solid var(--error);
+      padding: 6px 12px;
+      font-size: 11px;
+      margin-left: 8px;
+    }
+
+    .btn-danger:hover{
+      background: var(--error);
+      color: #ffffff;
+    }
+
+    .btn-success{
+      background: transparent;
+      color: var(--success);
+      border: 2px solid var(--success);
+    }
+
+    .btn-success:hover{
+      background: var(--success);
+      color: #ffffff;
+    }
+
+    .btn-warning{
+      background: transparent;
+      color: var(--warning);
+      border: 2px solid var(--warning);
+      padding: 6px 12px;
+      font-size: 11px;
+      margin-left: 8px;
+    }
+
+    .btn-warning:hover{
+      background: var(--warning);
+      color: #ffffff;
+    }
+
+    .btn-info{
+      background: transparent;
+      color: var(--info);
+      border: 2px solid var(--info);
+      padding: 6px 12px;
+      font-size: 11px;
+    }
+
+    .btn-info:hover{
+      background: var(--info);
+      color: #ffffff;
+    }
+
+    .stats{
+      display: flex;
+      gap: 16px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .stat-card{
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: 0 6px 18px var(--shadow);
+      border: 1px solid var(--muted);
+      min-width: 140px;
+      flex: 1;
+      text-align: center;
+      transition: transform 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--accent);
+    }
+
+    .stat-card:hover{
+      transform: translateY(-3px);
+    }
+
+    .stat-title{
+      font-size: 13px;
+      color: var(--muted-text);
+      margin: 0 0 8px 0;
+      font-family: 'Montserrat', sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-value{
+      font-size: 24px;
+      color: var(--accent);
+      font-weight: 700;
+      font-family: 'Parisienne', cursive;
+    }
+
+    .list-card{
+      background: var(--card-bg);
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--muted);
+      box-shadow: 0 8px 25px var(--shadow);
+      margin-top: 20px;
+    }
+
+    .list-header{
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+      color: #ffffff;
+      padding: 16px 20px;
+      font-weight: 600;
+      letter-spacing: 0.6px;
+      font-family: 'Parisienne', cursive;
+      font-size: 20px;
+      text-align: center;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .connection-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-family: 'Montserrat', sans-serif;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background-color: var(--success);
+      animation: pulse 2s infinite;
+    }
+
+    .status-dot.offline {
+      background-color: var(--error);
+      animation: none;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+
+    #confirmacionesList{
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-height: 60vh;
+      overflow: auto;
+    }
+
+    .confirm-item{
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      padding: 16px;
+      border-radius: 12px;
+      background: rgba(240,230,214,0.12);
+      border: 1px solid var(--muted);
+      transition: all 0.3s ease;
+      position: relative;
+      animation: fadeInUp 0.5s ease;
+    }
+
+    .confirm-item.new-item {
+      background: rgba(56, 142, 60, 0.05);
+      border-color: rgba(56, 142, 60, 0.3);
+    }
+
+    .confirm-item.updated-item {
+      background: rgba(25, 118, 210, 0.05);
+      border-color: rgba(25, 118, 210, 0.3);
+    }
+
+    .confirm-item.removed-item {
+      background: rgba(211, 47, 47, 0.05);
+      border-color: rgba(211, 47, 47, 0.3);
+      animation: fadeOut 0.5s ease forwards;
+    }
+
+    .confirm-item::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 4px;
+      height: 60%;
+      background: var(--accent);
+      border-radius: 0 4px 4px 0;
+      opacity: 0.7;
+    }
+
+    .confirm-item:hover{
+      transform: translateX(5px);
+      box-shadow: 0 4px 12px var(--shadow);
+    }
+
+    .avatar{
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: #ffffff;
+      border: 2px solid var(--muted);
+      flex-shrink: 0;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 18px;
+    }
+
+    .info{
+      flex: 1;
+      min-width: 0;
+    }
+
+    .name{
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 6px;
+      font-family: 'Playfair Display', serif;
+    }
+
+    .contact-info {
+      font-size: 13px;
+      color: var(--muted-text);
+      line-height: 1.4;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .contact-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .icon {
+      width: 14px;
+      height: 14px;
+      opacity: 0.6;
+    }
+
+    .meta{
+      font-size: 14px;
+      color: var(--muted-text);
+      line-height: 1.4;
+      margin-bottom: 4px;
+    }
+
+    .timestamp{
+      font-size: 12px;
+      color: var(--muted-text);
+      font-style: italic;
+    }
+
+    .right{
+      text-align: right;
+      min-width: 140px;
+      display: flex;
+      flex-direction: row;
+      gap: 8px;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .right .people{
+      font-weight: 700;
+      color: var(--accent);
+      font-size: 20px;
+      font-family: 'Parisienne', cursive;
+    }
+
+    .empty{
+      padding: 30px;
+      text-align: center;
+      color: var(--muted-text);
+      font-style: italic;
+      font-size: 16px;
+    }
+
+    .loading{
+      padding: 30px;
+      text-align: center;
+      color: var(--muted-text);
+      font-style: italic;
+      font-size: 16px;
+    }
+
+    .pagination{
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-top: 20px;
+      justify-content: center;
+      padding: 16px;
+      border-top: 1px solid var(--muted);
+    }
+
+    .page-info{
+      color: var(--muted-text);
+      font-size: 14px;
+      font-family: 'Montserrat', sans-serif;
+    }
+
+    .small-btn{
+      padding: 8px 16px;
+      border-radius: 8px;
+      background: transparent;
+      border: 2px solid var(--accent);
+      color: var(--accent);
+      cursor: pointer;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 13px;
+      transition: all 0.3s ease;
+    }
+
+    .small-btn:hover:not(:disabled){
+      background: var(--accent);
+      color: #ffffff;
+    }
+
+    .small-btn:disabled{
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    footer{
+      text-align: center;
+      margin-top: 30px;
+      color: var(--muted-text);
+      font-size: 14px;
+      font-family: 'Montserrat', sans-serif;
+      padding: 20px;
+    }
+
+    /* Modal de confirmación para eliminar */
+    .modal{ 
+      position:fixed; 
+      top:0; 
+      left:0; 
+      width:100%; 
+      height:100%; 
+      display:flex; 
+      align-items:center; 
+      justify-content:center; 
+      background:rgba(0,0,0,0.45); 
+      z-index:1000; 
+      opacity:0; 
+      pointer-events:none; 
+      transition:opacity .25s ease;
+    }
+    .modal.active{ 
+      opacity:1; 
+      pointer-events:all;
+    }
+    .modal-content{
+      position:relative;
+      width:92%; 
+      max-width:400px;
+      background:var(--card-bg);
+      padding:20px;
+      border-radius:12px;
+      box-shadow:0 8px 24px var(--shadow);
+      border-top:3px solid var(--error);
+      transform:translateY(16px);
+      transition:transform .25s ease;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal.active .modal-content{ 
+      transform:translateY(0);
+    }
+
+    .close-modal{
+      position:absolute; 
+      top:10px; 
+      right:10px;
+      width:34px; 
+      height:34px; 
+      border-radius:6px;
+      display:flex; 
+      align-items:center; 
+      justify-content:center;
+      background:transparent; 
+      border:none; 
+      cursor:pointer;
+      color:var(--accent); 
+      font-size:18px; 
+      padding:0; 
+      z-index:3;
+      transition: background 0.2s;
+    }
+
+    .close-modal:hover {
+      background: rgba(142,108,136,0.1);
+    }
+
+    .modal-title{ 
+      font-family:'Parisienne',cursive; 
+      color:var(--error); 
+      font-size:22px; 
+      margin:0 0 12px; 
+      text-align:center;
+    }
+
+    .modal-actions{
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .modal-actions .btn{
+      flex: 1;
+    }
+
+    /* Toast notifications */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      border-radius: 8px;
+      color: white;
+      font-weight: 500;
+      z-index: 1001;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      transform: translateY(100px);
+      opacity: 0;
+      transition: transform 0.3s, opacity 0.3s;
+    }
+    
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    
+    .toast.success {
+      background-color: var(--success);
+    }
+    
+    .toast.error {
+      background-color: var(--error);
+    }
+    
+    .toast.info {
+      background-color: var(--accent);
+    }
+
+    /* Loading overlay */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    
+    .loading-overlay.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+    
+    .loading-spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s ease-in-out infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Filtros */
+    .filters {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    
+    .filter-btn {
+      background: transparent;
+      border: 2px solid var(--muted);
+      color: var(--muted-text);
+      padding: 8px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 13px;
+      transition: all 0.3s ease;
+    }
+    
+    .filter-btn.active {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+    
+    .filter-btn:hover:not(.active) {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* Estado de confirmación */
+    .status-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+      margin-left: 8px;
+    }
+    
+    .status-confirmed {
+      background-color: rgba(56, 142, 60, 0.1);
+      color: var(--success);
+    }
+    
+    .status-pending {
+      background-color: rgba(245, 124, 0, 0.1);
+      color: var(--warning);
+    }
+
+    /* Modal de edición */
+    .edit-modal .modal-content {
+      border-top-color: var(--accent);
+      max-width: 500px;
+    }
+    
+    .edit-modal .modal-title {
+      color: var(--accent);
+    }
+    
+    .form-group {
+      margin-bottom: 16px;
+    }
+    
+    .form-label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 500;
+      color: var(--text);
+    }
+    
+    .form-input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 2px solid var(--muted);
+      border-radius: 8px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 14px;
+      transition: all 0.3s ease;
+    }
+    
+    .form-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px var(--focus-ring);
+    }
+    
+    .form-row {
+      display: flex;
+      gap: 12px;
+    }
+    
+    .form-row .form-group {
+      flex: 1;
+    }
+
+    /* Indicador de actualización en tiempo real */
+    .realtime-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--muted-text);
+      margin-top: 8px;
+    }
+
+    .realtime-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--success);
+      animation: pulse 2s infinite;
+    }
+
+    @media (max-width: 640px){
+      .right{
+        min-width: 120px;
+        font-size: 13px;
+      }
+      
+      .avatar{
+        width: 50px;
+        height: 50px;
+        font-size: 16px;
+      }
+      
+      .name{
+        font-size: 16px;
+      }
+      
+      .stat-card{
+        min-width: 120px;
+        padding: 14px;
+      }
+      
+      .stat-value{
+        font-size: 20px;
+      }
+      
+      header.app-header{
+        flex-direction: column;
+        text-align: center;
+        gap: 12px;
+      }
+      
+      .confirm-item {
+        flex-direction: column;
+        text-align: center;
+        gap: 12px;
+      }
+      
+      .right {
+        align-items: center;
+        width: 100%;
+        justify-content: center;
+      }
+      
+      .decoration {
+        display: none;
+      }
+      
+      .toast {
+        left: 20px;
+        right: 20px;
+      }
+      
+      .contact-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+      }
+      
+      .form-row {
+        flex-direction: column;
+        gap: 0;
+      }
+      
+      .list-header {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+      }
+    }
+
+    /* Animaciones */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeOut {
+      from {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      to {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+    }
+
+    @keyframes highlight {
+      0% { background-color: rgba(56, 142, 60, 0.2); }
+      100% { background-color: rgba(240,230,214,0.12); }
+    }
+
+    .highlight-animation {
+      animation: highlight 2s ease;
+    }
+  </style>
+</head>
+<body>
+  <!-- Elementos decorativos de fondo -->
+  <div class="decoration circle"></div>
+  <div class="decoration flower"></div>
+
+  <!-- Loading overlay -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+  </div>
+
+  <div class="container">
+    <header class="app-header" role="banner">
+      <img class="logo-img" src="https://i.ibb.co/MyswS4v6/image.jpg" alt="Daniela Primera Comunión" />
+      <div>
+        <h1>Confirmaciones — Primera Comunión Daniela</h1>
+        <div class="realtime-indicator">
+          <div class="realtime-dot" id="realtimeDot"></div>
+          <span id="realtimeStatus">Sincronizando datos...</span>
+        </div>
+      </div>
+    </header>
+
+    <section class="controls" aria-label="Controles">
+      <input id="searchInput" class="search" type="text" placeholder="Buscar por nombre, email o teléfono..." aria-label="Buscar por nombre, email o teléfono" />
+      <button class="btn" id="exportCsvBtn">Exportar CSV</button>
+      <button class="btn btn-secondary" id="refreshBtn">Actualizar</button>
+    </section>
+
+    <section class="filters" aria-label="Filtros">
+      <button class="filter-btn active" data-filter="all">Todos</button>
+      <button class="filter-btn" data-filter="confirmed">Confirmados</button>
+      <button class="filter-btn" data-filter="pending">Pendientes</button>
+    </section>
+
+    <section class="stats">
+      <div class="stat-card">
+        <div class="stat-title">Total Confirmaciones</div>
+        <div class="stat-value" id="totalConfirmaciones">0</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-title">Adultos Totales</div>
+        <div class="stat-value" id="totalAdultos">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-title">Niños Totales</div>
+        <div class="stat-value" id="totalNinos">0</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-title">Total Personas</div>
+        <div class="stat-value" id="totalPersonas">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-title">Última actualización</div>
+        <div class="stat-value" id="lastUpdate">—</div>
+      </div>
+    </section>
+
+    <section class="list-card" aria-labelledby="listTitle">
+      <div class="list-header" id="listTitle">
+        <span>Lista de Confirmaciones</span>
+        <div class="connection-status">
+          <div class="status-dot" id="connectionDot"></div>
+          <span id="connectionStatus">En línea</span>
+        </div>
+      </div>
+
+      <div id="confirmationsArea">
+        <div id="loading" class="loading">Cargando datos...</div>
+        <div id="confirmacionesList" aria-live="polite" role="list"></div>
+
+        <!-- Controles de paginación -->
+        <div class="pagination" aria-label="Paginación">
+          <button id="prevPage" class="small-btn" disabled>Anterior</button>
+          <div class="page-info">Página <span id="pageNumber">1</span></div>
+          <button id="nextPage" class="small-btn" disabled>Siguiente</button>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      Versión <strong>1.3.0</strong> — <time id="fechaPublicacion"></time>
+    </footer>
+  </div>
+
+  <!-- Modal para confirmar eliminación -->
+  <div id="deleteModal" class="modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="deleteModalTitle">
+    <div class="modal-content" role="document">
+      <button class="close-modal" id="closeDeleteModalBtn" aria-label="Cerrar">&times;</button>
+      <div id="deleteModalTitle" class="modal-title">Confirmar Eliminación</div>
+      <p style="text-align: center; color: var(--text); margin: 16px 0;">¿Estás seguro de que deseas eliminar esta confirmación?</p>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="cancelDeleteBtn">Cancelar</button>
+        <button class="btn btn-danger" id="confirmDeleteBtn">Eliminar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para confirmar exportación -->
+  <div id="exportModal" class="modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="exportModalTitle">
+    <div class="modal-content" role="document">
+      <button class="close-modal" id="closeExportModalBtn" aria-label="Cerrar">&times;</button>
+      <div id="exportModalTitle" class="modal-title" style="color: var(--accent);">Exportar Datos</div>
+      <p style="text-align: center; color: var(--text); margin: 16px 0;">¿Estás seguro de que deseas exportar todos los datos a CSV?</p>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="cancelExportBtn">Cancelar</button>
+        <button class="btn btn-success" id="confirmExportBtn">Exportar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para editar confirmación -->
+  <div id="editModal" class="modal edit-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="editModalTitle">
+    <div class="modal-content" role="document">
+      <button class="close-modal" id="closeEditModalBtn" aria-label="Cerrar">&times;</button>
+      <div id="editModalTitle" class="modal-title">Editar Confirmación</div>
+      <form id="editForm">
+        <div class="form-group">
+          <label class="form-label" for="editNombre">Nombre</label>
+          <input type="text" id="editNombre" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="editEmail">Email</label>
+          <input type="email" id="editEmail" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="editTelefono">Teléfono</label>
+          <input type="tel" id="editTelefono" class="form-input">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="editAdultos">Adultos</label>
+            <input type="number" id="editAdultos" class="form-input" min="0" value="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="editNinos">Niños</label>
+            <input type="number" id="editNinos" class="form-input" min="0" value="0">
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="cancelEditBtn">Cancelar</button>
+          <button type="submit" class="btn btn-success">Guardar Cambios</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Firebase compat -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    // Configuración de Firebase de la invitación de Daniela
+    const firebaseConfig = {
+      apiKey: "AIzaSyCTh8kPdvu-6Z5_cckNts22VrhdUTLVspM",
+      authDomain: "invitea-f7331.firebaseapp.com",
+      projectId: "invitea-f7331",
+      storageBucket: "invitea-f7331.firebasestorage.app",
+      messagingSenderId: "145115727672",
+      appId: "1:145115727672:web:d1d89c20bf946b9e2663cd",
+      measurementId: "G-8JS1MDZVGQ"
+    };
+
+    // Inicializar Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Variables globales
+    const pageSize = 10;
+    let currentPage = 1;
+    let firstDoc = null;
+    let lastDoc = null;
+    let currentItems = [];
+    let currentDocs = []; // Para guardar los documentos completos (con ID)
+    let docToDelete = null;
+    let docToEdit = null;
+    let allDataCache = null; // Cache para todos los datos
+    let lastCacheUpdate = null; // Timestamp de última actualización del cache
+    let currentFilter = 'all'; // Filtro actual
+    let realtimeUnsubscribe = null; // Función para desuscribirse de las actualizaciones en tiempo real
+    let searchTimeout = null; // Para debouncing de búsqueda
+
+    // SVG para iconos vectoriales
+    const emailIcon = `
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+        <polyline points="22,6 12,13 2,6"/>
+      </svg>
+    `;
+    
+    const phoneIcon = `
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+      </svg>
+    `;
+
+    // Utiles
+    function calcularDetalle(doc) {
+      const adultos = Number(doc.adultos ?? doc.adults ?? 0);
+      const ninos = Number(doc.ninos ?? doc.children ?? 0);
+      return { adultos, ninos, total: adultos + ninos };
+    }
+
+    function formatFechaHora(timestamp) {
+      if (!timestamp) return 'Sin fecha';
+      try {
+        const d = (timestamp.toDate) ? timestamp.toDate() : new Date(timestamp);
+        return d.toLocaleString('es-MX', { 
+          year: 'numeric', 
+          month: 'short', 
+          day: '2-digit', 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        });
+      } catch(e) { 
+        return '—'; 
+      }
+    }
+
+    // Mostrar notificación toast
+    function showToast(message, type = 'info', duration = 3000) {
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.classList.add('show');
+      }, 10);
+      
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+          document.body.removeChild(toast);
+        }, 300);
+      }, duration);
+    }
+
+    // Mostrar/ocultar loading overlay
+    function showLoading() {
+      document.getElementById('loadingOverlay').classList.add('active');
+    }
+    
+    function hideLoading() {
+      document.getElementById('loadingOverlay').classList.remove('active');
+    }
+
+    // Actualizar estado de conexión
+    function updateConnectionStatus(connected) {
+      const dot = document.getElementById('connectionDot');
+      const status = document.getElementById('connectionStatus');
+      const realtimeDot = document.getElementById('realtimeDot');
+      const realtimeStatus = document.getElementById('realtimeStatus');
+      
+      if (connected) {
+        dot.classList.remove('offline');
+        status.textContent = 'En línea';
+        realtimeDot.style.backgroundColor = 'var(--success)';
+        realtimeStatus.textContent = 'Sincronizando datos...';
+      } else {
+        dot.classList.add('offline');
+        status.textContent = 'Sin conexión';
+        realtimeDot.style.backgroundColor = 'var(--error)';
+        realtimeStatus.textContent = 'Sin conexión';
+      }
+    }
+
+    // Configurar listener de estado de conexión
+    function setupConnectionListener() {
+      db.enableNetwork().catch(() => {
+        // Ignorar errores de red al inicio
+      });
+      
+      // Listener para cambios de conexión
+      db.onSnapshotsInSync(() => {
+        updateConnectionStatus(true);
+      });
+      
+      // También podemos usar un listener más específico para Firestore
+      db.waitForPendingWrites().then(() => {
+        updateConnectionStatus(true);
+      }).catch(() => {
+        updateConnectionStatus(false);
+      });
+    }
+
+    // Configurar actualizaciones en tiempo real
+    function setupRealtimeUpdates() {
+      // Cancelar suscripción anterior si existe
+      if (realtimeUnsubscribe) {
+        realtimeUnsubscribe();
+      }
+      
+      // Suscribirse a cambios en tiempo real
+      realtimeUnsubscribe = db.collection('ejemploprimeracomunion_panel')
+        .orderBy('timestamp', 'desc')
+        .onSnapshot({
+          next: (snapshot) => {
+            // Procesar cambios
+            snapshot.docChanges().forEach((change) => {
+              if (change.type === 'added') {
+                handleNewConfirmation(change.doc);
+              } else if (change.type === 'modified') {
+                handleUpdatedConfirmation(change.doc);
+              } else if (change.type === 'removed') {
+                handleRemovedConfirmation(change.doc);
+              }
+            });
+            
+            // Actualizar cache
+            allDataCache = snapshot.docs;
+            lastCacheUpdate = Date.now();
+            
+            // Recargar la vista actual
+            reloadCurrentView();
+            
+            // Mostrar notificación si hay cambios
+            if (snapshot.docChanges().length > 0) {
+              showToast('Datos actualizados', 'info', 2000);
+            }
+          },
+          error: (error) => {
+            console.error('Error en actualizaciones en tiempo real:', error);
+            updateConnectionStatus(false);
+            showToast('Error de conexión', 'error', 5000);
+          }
+        });
+    }
+
+    // Manejar nueva confirmación
+    function handleNewConfirmation(doc) {
+      // Aquí podrías agregar lógica específica para nuevas confirmaciones
+      console.log('Nueva confirmación:', doc.id, doc.data());
+    }
+
+    // Manejar confirmación actualizada
+    function handleUpdatedConfirmation(doc) {
+      // Aquí podrías agregar lógica específica para confirmaciones actualizadas
+      console.log('Confirmación actualizada:', doc.id, doc.data());
+    }
+
+    // Manejar confirmación eliminada
+    function handleRemovedConfirmation(doc) {
+      // Aquí podrías agregar lógica específica para confirmaciones eliminadas
+      console.log('Confirmación eliminada:', doc.id);
+    }
+
+    // Recargar vista actual
+    function reloadCurrentView() {
+      if (currentPage === 1) {
+        loadFirstPage();
+      } else {
+        // Para páginas posteriores, volver a cargar desde el inicio
+        // Esto podría optimizarse para mantener la posición actual
+        loadFirstPage().then(() => {
+          for (let i = 1; i < currentPage; i++) {
+            loadNextPage();
+          }
+        });
+      }
+    }
+
+    // Render de la página actual
+    function renderPage(docs) {
+      const listEl = document.getElementById('confirmacionesList');
+      const loadingEl = document.getElementById('loading');
+      listEl.innerHTML = '';
+
+      if (!docs.length) {
+        loadingEl.style.display = 'none';
+        const empty = document.createElement('div');
+        empty.className = 'empty';
+        empty.textContent = 'No hay confirmaciones en esta página.';
+        listEl.appendChild(empty);
+        updateStats([], null);
+        return;
+      }
+      loadingEl.style.display = 'none';
+
+      const items = docs.map(doc => doc.data());
+      currentItems = items;
+      currentDocs = docs;
+
+      updateStats(items);
+
+      docs.forEach((docSnapshot, index) => {
+        const d = docSnapshot.data();
+        const det = calcularDetalle(d);
+        const item = document.createElement('div');
+        item.className = 'confirm-item';
+        item.setAttribute('role', 'listitem');
+        item.setAttribute('data-doc-id', docSnapshot.id);
+
+        const avatar = document.createElement('div');
+        avatar.className = 'avatar';
+        const initials = (d.nombre || 'U').split(' ').map(s => s[0]).slice(0, 2).join('').toUpperCase();
+        avatar.textContent = initials;
+
+        const info = document.createElement('div');
+        info.className = 'info';
+        
+        const name = document.createElement('div');
+        name.className = 'name';
+        name.textContent = d.nombre || 'Sin nombre';
+        
+        // Estado de confirmación
+        const status = document.createElement('span');
+        status.className = `status-badge ${det.total > 0 ? 'status-confirmed' : 'status-pending'}`;
+        status.textContent = det.total > 0 ? 'Confirmado' : 'Pendiente';
+        name.appendChild(status);
+        
+        const contactInfo = document.createElement('div');
+        contactInfo.className = 'contact-info';
+        
+        const emailItem = document.createElement('div');
+        emailItem.className = 'contact-item';
+        emailItem.innerHTML = emailIcon + (d.email || 'No proporcionado');
+        
+        const phoneItem = document.createElement('div');
+        phoneItem.className = 'contact-item';
+        phoneItem.innerHTML = phoneIcon + (d.telefono || 'No proporcionado');
+        
+        contactInfo.appendChild(emailItem);
+        contactInfo.appendChild(phoneItem);
+        
+        const meta = document.createElement('div');
+        meta.className = 'meta';
+        meta.innerHTML = `Adultos: <strong style="color: var(--accent)">${det.adultos}</strong> &nbsp; • &nbsp; Niños: <strong style="color: var(--accent)">${det.ninos}</strong> &nbsp; • &nbsp; Total: <strong style="color: var(--accent)">${det.total}</strong>`;
+        
+        const timestamp = document.createElement('div');
+        timestamp.className = 'timestamp';
+        timestamp.textContent = formatFechaHora(d.timestamp);
+
+        const right = document.createElement('div');
+        right.className = 'right';
+        
+        const people = document.createElement('div');
+        people.className = 'people';
+        people.textContent = det.total;
+        
+        const editBtn = document.createElement('button');
+        editBtn.className = 'btn btn-warning';
+        editBtn.textContent = 'Editar';
+        editBtn.addEventListener('click', () => {
+          openEditModal(docSnapshot.id, d);
+        });
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'btn btn-danger';
+        deleteBtn.textContent = 'Eliminar';
+        deleteBtn.addEventListener('click', () => {
+          openDeleteModal(docSnapshot.id, d.nombre || 'Esta confirmación');
+        });
+
+        info.appendChild(name);
+        info.appendChild(contactInfo);
+        info.appendChild(meta);
+        info.appendChild(timestamp);
+        
+        right.appendChild(people);
+        right.appendChild(editBtn);
+        right.appendChild(deleteBtn);
+
+        item.appendChild(avatar);
+        item.appendChild(info);
+        item.appendChild(right);
+        listEl.appendChild(item);
+      });
+    }
+
+    // Actualiza estadísticas
+    function updateStats(pageItems = [], lastTimestamp = null) {
+      let totalConfirm = pageItems.length;
+      let totalPersonas = 0, totalAdultos = 0, totalNinos = 0;
+      let latest = lastTimestamp;
+
+      pageItems.forEach(d => {
+        const det = calcularDetalle(d);
+        totalPersonas += det.total;
+        totalAdultos += det.adultos;
+        totalNinos += det.ninos;
+        if (d.timestamp && d.timestamp.toDate) {
+          const t = d.timestamp.toDate();
+          if (!latest || t > latest) latest = t;
+        }
+      });
+
+      document.getElementById('totalConfirmaciones').textContent = totalConfirm;
+      document.getElementById('totalPersonas').textContent = totalPersonas;
+      document.getElementById('totalAdultos').textContent = totalAdultos;
+      document.getElementById('totalNinos').textContent = totalNinos;
+      document.getElementById('lastUpdate').textContent = latest ? 
+        latest.toLocaleString('es-MX', { 
+          day: '2-digit', 
+          month: 'short', 
+          year: 'numeric', 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        }) : '—';
+    }
+
+    // Consultas paginadas
+    async function loadFirstPage() {
+      showLoading();
+      try {
+        currentPage = 1;
+        document.getElementById('pageNumber').textContent = currentPage;
+        const q = db.collection('ejemploprimeracomunion_panel').orderBy('timestamp', 'desc').limit(pageSize);
+        const snap = await q.get();
+        const docs = snap.docs;
+        firstDoc = snap.docs[0] || null;
+        lastDoc = snap.docs[snap.docs.length - 1] || null;
+        renderPage(docs);
+        updatePaginationButtons(snap.docs.length === pageSize, false);
+      } catch (error) {
+        console.error('Error al cargar datos:', error);
+        showToast('Error al cargar los datos', 'error', 5000);
+      } finally {
+        hideLoading();
+      }
+    }
+
+    async function loadNextPage() {
+      if (!lastDoc) return;
+      showLoading();
+      try {
+        const q = db.collection('ejemploprimeracomunion_panel').orderBy('timestamp', 'desc').startAfter(lastDoc).limit(pageSize);
+        const snap = await q.get();
+        const docs = snap.docs;
+        if (!docs.length) return;
+        firstDoc = snap.docs[0] || null;
+        lastDoc = snap.docs[snap.docs.length - 1] || null;
+        currentPage++;
+        document.getElementById('pageNumber').textContent = currentPage;
+        renderPage(docs);
+        updatePaginationButtons(snap.docs.length === pageSize, true);
+      } catch (error) {
+        console.error('Error al cargar siguiente página:', error);
+        showToast('Error al cargar la siguiente página', 'error', 5000);
+      } finally {
+        hideLoading();
+      }
+    }
+
+    async function loadPrevPage() {
+      if (!firstDoc) return;
+      showLoading();
+      try {
+        const q = db.collection('ejemploprimeracomunion_panel').orderBy('timestamp', 'desc').endBefore(firstDoc).limitToLast(pageSize);
+        const snap = await q.get();
+        const docs = snap.docs;
+        if (!docs.length) return;
+        firstDoc = snap.docs[0] || null;
+        lastDoc = snap.docs[snap.docs.length - 1] || null;
+        currentPage = Math.max(1, currentPage - 1);
+        document.getElementById('pageNumber').textContent = currentPage;
+        renderPage(docs);
+        updatePaginationButtons(true, true);
+        if (!firstDoc) document.getElementById('prevPage').disabled = true;
+      } catch (error) {
+        console.error('Error al cargar página anterior:', error);
+        showToast('Error al cargar la página anterior', 'error', 5000);
+      } finally {
+        hideLoading();
+      }
+    }
+
+    function updatePaginationButtons(hasNext, hasPrev) {
+      document.getElementById('nextPage').disabled = !hasNext;
+      document.getElementById('prevPage').disabled = !hasPrev && currentPage === 1;
+    }
+
+    // Eliminar registro
+    async function deleteRecord(docId) {
+      showLoading();
+      try {
+        await db.collection('ejemploprimeracomunion_panel').doc(docId).delete();
+        // Invalidar cache
+        allDataCache = null;
+        lastCacheUpdate = null;
+        
+        showToast('Confirmación eliminada correctamente', 'success');
+      } catch (error) {
+        console.error('Error al eliminar registro:', error);
+        showToast('Error al eliminar el registro', 'error', 5000);
+      } finally {
+        hideLoading();
+      }
+    }
+
+    // Editar registro
+    async function updateRecord(docId, data) {
+      showLoading();
+      try {
+        await db.collection('ejemploprimeracomunion_panel').doc(docId).update(data);
+        showToast('Confirmación actualizada correctamente', 'success');
+      } catch (error) {
+        console.error('Error al actualizar registro:', error);
+        showToast('Error al actualizar el registro', 'error', 5000);
+      } finally {
+        hideLoading();
+      }
+    }
+
+    // Modal para eliminar
+    function openDeleteModal(docId, nombre) {
+      docToDelete = docId;
+      const modal = document.getElementById('deleteModal');
+      const title = document.getElementById('deleteModalTitle');
+      title.textContent = `Eliminar: ${nombre}`;
+      modal.classList.add('active');
+      modal.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeDeleteModal() {
+      const modal = document.getElementById('deleteModal');
+      modal.classList.remove('active');
+      modal.setAttribute('aria-hidden', 'true');
+      docToDelete = null;
+    }
+
+    // Modal para editar
+    function openEditModal(docId, data) {
+      docToEdit = docId;
+      const modal = document.getElementById('editModal');
+      const title = document.getElementById('editModalTitle');
+      const det = calcularDetalle(data);
+      
+      // Llenar el formulario con los datos actuales
+      document.getElementById('editNombre').value = data.nombre || '';
+      document.getElementById('editEmail').value = data.email || '';
+      document.getElementById('editTelefono').value = data.telefono || '';
+      document.getElementById('editAdultos').value = det.adultos;
+      document.getElementById('editNinos').value = det.ninos;
+      
+      title.textContent = `Editar: ${data.nombre || 'Confirmación'}`;
+      modal.classList.add('active');
+      modal.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeEditModal() {
+      const modal = document.getElementById('editModal');
+      modal.classList.remove('active');
+      modal.setAttribute('aria-hidden', 'true');
+      docToEdit = null;
+    }
+
+    // Modal para exportar
+    function openExportModal() {
+      const modal = document.getElementById('exportModal');
+      modal.classList.add('active');
+      modal.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeExportModal() {
+      const modal = document.getElementById('exportModal');
+      modal.classList.remove('active');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+
+    // Export CSV
+    async function exportAllCSV() {
+      showLoading();
+      try {
+        // Usar cache si está disponible y es reciente (menos de 5 minutos)
+        const now = Date.now();
+        if (!allDataCache || !lastCacheUpdate || (now - lastCacheUpdate) > 300000) {
+          const snap = await db.collection('ejemploprimeracomunion_panel').orderBy('timestamp', 'desc').get();
+          allDataCache = snap.docs;
+          lastCacheUpdate = now;
+        }
+        
+        const rows = allDataCache.map(d => {
+          const data = d.data();
+          const det = calcularDetalle(data);
+          const nombre = `"${(data.nombre || '').replace(/"/g, '""')}"`;
+          const email = `"${(data.email || '').replace(/"/g, '""')}"`;
+          const telefono = `"${(data.telefono || '').replace(/"/g, '""')}"`;
+          const fecha = formatFechaHora(data.timestamp).replace(/"/g, '""');
+          return [nombre, email, telefono, det.adultos, det.ninos, det.total, `"${fecha}"`].join(',');
+        });
+        const header = ['Nombre', 'Email', 'Teléfono', 'Adultos', 'Niños', 'Total', 'FechaHora'];
+        const csv = [header.join(','), ...rows].join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `confirmaciones_primera_comunion_daniela_${new Date().toISOString().slice(0,10)}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('Datos exportados correctamente', 'success');
+      } catch (error) {
+        console.error('Error al exportar CSV:', error);
+        showToast('Error al exportar los datos', 'error', 5000);
+      } finally {
+        hideLoading();
+        closeExportModal();
+      }
+    }
+
+    // Búsqueda local con debouncing
+    function searchInCurrentPage(q) {
+      if (!q) {
+        renderPage(currentDocs);
+        return;
+      }
+      const filtered = currentDocs.filter(doc => {
+        const data = doc.data();
+        return (data.nombre || '').toLowerCase().includes(q) ||
+               (data.email || '').toLowerCase().includes(q) ||
+               (data.telefono || '').toLowerCase().includes(q);
+      });
+      renderPage(filtered);
+    }
+
+    // Filtros
+    function applyFilter(filter) {
+      currentFilter = filter;
+      const filterBtns = document.querySelectorAll('.filter-btn');
+      filterBtns.forEach(btn => {
+        if (btn.dataset.filter === filter) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+      
+      // En una implementación real, aquí se aplicaría el filtro a los datos
+      // Por ahora, solo mostramos un mensaje
+      if (filter === 'all') {
+        renderPage(currentDocs);
+      } else {
+        const filtered = currentDocs.filter(doc => {
+          const data = doc.data();
+          const det = calcularDetalle(data);
+          if (filter === 'confirmed') {
+            return det.total > 0;
+          } else if (filter === 'pending') {
+            return det.total === 0;
+          }
+          return true;
+        });
+        renderPage(filtered);
+      }
+    }
+
+    // Eventos y arranque
+    document.addEventListener('DOMContentLoaded', () => {
+      // Configurar listeners de conexión y tiempo real
+      setupConnectionListener();
+      setupRealtimeUpdates();
+
+      document.getElementById('nextPage').addEventListener('click', async () => {
+        document.getElementById('nextPage').disabled = true;
+        await loadNextPage();
+      });
+
+      document.getElementById('prevPage').addEventListener('click', async () => {
+        document.getElementById('prevPage').disabled = true;
+        await loadPrevPage();
+      });
+
+      document.getElementById('refreshBtn').addEventListener('click', () => {
+        // Invalidar cache
+        allDataCache = null;
+        lastCacheUpdate = null;
+        
+        if (currentPage === 1) {
+          loadFirstPage();
+        } else {
+          (async () => {
+            await loadFirstPage();
+            for (let i = 1; i < currentPage; i++) {
+              await loadNextPage();
+            }
+          })();
+        }
+        showToast('Datos actualizados manualmente', 'info');
+      });
+
+      document.getElementById('exportCsvBtn').addEventListener('click', openExportModal);
+      
+      // Búsqueda con debouncing
+      document.getElementById('searchInput').addEventListener('input', (e) => {
+        const q = e.target.value.trim().toLowerCase();
+        
+        // Limpiar timeout anterior
+        if (searchTimeout) {
+          clearTimeout(searchTimeout);
+        }
+        
+        // Establecer nuevo timeout
+        searchTimeout = setTimeout(() => {
+          searchInCurrentPage(q);
+        }, 300);
+      });
+
+      // Filtros
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          applyFilter(e.target.dataset.filter);
+        });
+      });
+
+      // Modal events
+      document.getElementById('closeDeleteModalBtn').addEventListener('click', closeDeleteModal);
+      document.getElementById('cancelDeleteBtn').addEventListener('click', closeDeleteModal);
+      document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
+        if (docToDelete) {
+          await deleteRecord(docToDelete);
+          closeDeleteModal();
+        }
+      });
+
+      // Edit modal events
+      document.getElementById('closeEditModalBtn').addEventListener('click', closeEditModal);
+      document.getElementById('cancelEditBtn').addEventListener('click', closeEditModal);
+      document.getElementById('editForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (docToEdit) {
+          const data = {
+            nombre: document.getElementById('editNombre').value,
+            email: document.getElementById('editEmail').value,
+            telefono: document.getElementById('editTelefono').value,
+            adultos: parseInt(document.getElementById('editAdultos').value) || 0,
+            ninos: parseInt(document.getElementById('editNinos').value) || 0
+          };
+          await updateRecord(docToEdit, data);
+          closeEditModal();
+        }
+      });
+
+      // Export modal events
+      document.getElementById('closeExportModalBtn').addEventListener('click', closeExportModal);
+      document.getElementById('cancelExportBtn').addEventListener('click', closeExportModal);
+      document.getElementById('confirmExportBtn').addEventListener('click', exportAllCSV);
+
+      // Cerrar modales al hacer clic fuera
+      document.getElementById('deleteModal').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('deleteModal')) {
+          closeDeleteModal();
+        }
+      });
+      
+      document.getElementById('exportModal').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('exportModal')) {
+          closeExportModal();
+        }
+      });
+      
+      document.getElementById('editModal').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('editModal')) {
+          closeEditModal();
+        }
+      });
+
+      // Fecha de publicación
+      const fechaEl = document.getElementById('fechaPublicacion');
+      fechaEl.textContent = new Date().toLocaleString('es-MX', {
+        year: 'numeric',
+        month: 'short',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+
+      // Cargar primera página
+      loadFirstPage().catch(err => {
+        document.getElementById('loading').textContent = 'Error al cargar datos: ' + (err.message || err);
+        showToast('Error al cargar los datos', 'error', 5000);
+      });
+    });
+
+    // Limpiar listeners al cerrar la página
+    window.addEventListener('beforeunload', () => {
+      if (realtimeUnsubscribe) {
+        realtimeUnsubscribe();
+      }
+    });
+  </script>
+</body>
+</html>
