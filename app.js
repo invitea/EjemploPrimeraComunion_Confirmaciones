@@ -1,270 +1,380 @@
-// --- Variables de configuración de Firebase (Usa las variables globales de Canvas) ---
-// __firebase_config, __app_id, __initial_auth_token son inyectadas en el entorno.
-const firebaseConfig = typeof __firebase_config !== 'undefined'
-    ? JSON.parse(__firebase_config)
-    : {};
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+// Configuración de Firebase
+const firebaseConfig = {
+  apiKey: "AIzaSyCTh8kPdvu-6Z5_cckNts22VrhdUTLVspM",
+  authDomain: "invitea-f7331.firebaseapp.com",
+  projectId: "invitea-f7331",
+  storageBucket: "invitea-f7331.firebasestorage.app",
+  messagingSenderId: "145115727672",
+  appId: "1:145115727672:web:d1d89c20bf946b9e2663cd",
+  measurementId: "G-8JS1MDZVGQ"
+};
 
-// Nombre de la colección en Firestore para esta aplicación
-// Se usa la estructura recomendada para datos públicos
-const COLLECTION_PATH = `artifacts/${appId}/public/data/rsvps`;
-let db = null;
-let auth = null;
-let isFirebaseReady = false;
+// Inicializar Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
-// --- Funciones de Utilidad ---
+// Variables globales
+const pageSize = 10;
+let currentPage = 1;
+let currentDocs = []; // Almacenará todos los documentos para paginación local
+let docToDelete = null, docToEdit = null;
+let searchTimeout = null;
 
-// Calcula la fecha dinámica (mañana a partir de hoy)
-function getDynamicDate() {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
-    const dateString = tomorrow.toLocaleDateString('es-MX', options);
-    // Capitaliza la primera letra
-    return dateString.charAt(0).toUpperCase() + dateString.slice(1);
+// Utilidades
+function calcularDetalle(doc) {
+  const adultos = Number(doc.adultos ?? doc.adults ?? 0);
+  const ninos = Number(doc.ninos ?? doc.children ?? 0);
+  return { adultos, ninos, total: adultos + ninos };
 }
 
-// Inicializa Firebase y autentica al usuario
-async function initializeFirebase() {
-    if (isFirebaseReady) return;
+function formatFechaHora(timestamp) {
+  if (!timestamp) return '—';
+  try {
+    const d = (timestamp.toDate) ? timestamp.toDate() : new Date(timestamp);
+    return d.toLocaleString('es-MX', { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+  } catch(e) { 
+    return '—'; 
+  }
+}
 
-    // Importaciones modulares de Firebase
-    const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
-    const { getAuth, signInWithCustomToken, signInAnonymously } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
-    const { getFirestore, collection, query, where, getDocs, addDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+function showToast(msg, type = 'success') {
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.classList.add('show'), 10);
+  setTimeout(() => { 
+    t.classList.remove('show'); 
+    setTimeout(() => t.remove(), 300); 
+  }, 3000);
+}
+
+function showLoading() { 
+  document.getElementById('loadingOverlay').classList.add('active'); 
+}
+
+function hideLoading() { 
+  document.getElementById('loadingOverlay').classList.remove('active'); 
+}
+
+// RENDERIZADO (Solo renderiza el array que se le pasa)
+function renderPage(docs) {
+  const listEl = document.getElementById('confirmacionesList');
+  const loadingEl = document.getElementById('loading');
+  listEl.innerHTML = '';
+  loadingEl.style.display = 'none';
+
+  if (!docs.length) {
+    listEl.innerHTML = `<div class="empty-state">No se encontraron registros.</div>`;
+    return;
+  }
+
+  docs.forEach(docSnap => {
+    const d = docSnap.data();
+    const det = calcularDetalle(d);
+    const isConfirmed = det.total > 0;
+    const initials = (d.nombre || '?').split(' ').map(s => s[0]).slice(0, 2).join('').toUpperCase();
     
-    try {
-        const app = initializeApp(firebaseConfig);
-        db = getFirestore(app);
-        auth = getAuth(app);
+    const iconEdit = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`;
+    const iconTrash = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
 
-        // Autenticación: usa el token si está disponible, sino, anónima
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-            await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-            await signInAnonymously(auth);
-        }
-        
-        isFirebaseReady = true;
-        console.log("Firebase inicializado y usuario autenticado.");
-    } catch (e) {
-        console.error("Error al inicializar o autenticar Firebase:", e);
-    }
-}
-
-// --- Lógica del Modal RSVP ---
-
-// Elementos del DOM
-const openBtn = document.getElementById('openRsvp');
-const modal = document.getElementById('rsvpModal');
-const closeBtn = document.getElementById('closeModalBtn');
-const form = document.getElementById('rsvpForm');
-const submitBtn = document.getElementById('submitBtn');
-const loadingSpinner = document.getElementById('loadingSpinner');
-const thankYou = document.getElementById('thankYouMessage');
-
-const nameIn = document.getElementById('name');
-const emailIn = document.getElementById('email');
-const phoneIn = document.getElementById('phone');
-const adultsIn = document.getElementById('adults');
-const childrenIn = document.getElementById('children');
-
-const nameErr = document.getElementById('nameError');
-const emailErr = document.getElementById('emailError');
-const emailDupErr = document.getElementById('emailDuplicateError');
-const phoneErr = document.getElementById('phoneError');
-const adErr = document.getElementById('adultsError');
-const chErr = document.getElementById('childrenError');
-
-// Validaciones
-function isValidEmail(e) { if(!e) return true; return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
-function isValidPhone(p) { if(!p) return true; return p.replace(/\D/g, '').length === 10; }
-function formatPhone(v) {
-    const n = v.replace(/\D/g, '');
-    if (n.length <= 2) return n;
-    if (n.length <= 6) return `(${n.slice(0,2)}) ${n.slice(2)}`;
-    return `(${n.slice(0,2)}) ${n.slice(2,6)}-${n.slice(6,10)}`;
-}
-
-// Revisa si el email ya existe en Firestore
-async function checkEmail(e) {
-    if (!db || !e || !isValidEmail(e)) return false;
-    try {
-        const rsvpCollection = collection(db, COLLECTION_PATH);
-        const q = query(rsvpCollection, where('email', '==', e.toLowerCase().trim()));
-        const snapshot = await getDocs(q);
-        return !snapshot.empty;
-    } catch (error) {
-        console.error("Error al verificar email en Firestore:", error);
-        return false;
-    }
-}
-
-// Manejo de errores en el UI
-function showErr(inputElement, errorElement, message) {
-    errorElement.textContent = message;
-    errorElement.style.display = 'block';
-    inputElement.classList.add('error');
-}
-function clearErr(inputElement, errorElement) {
-    errorElement.style.display = 'none';
-    inputElement.classList.remove('error', 'warning');
-}
-
-// Event Listeners para validación en tiempo real y formato
-function setupInputListeners() {
-    phoneIn.addEventListener('input', (e) => {
-        e.target.value = formatPhone(e.target.value);
-        if(e.target.value && !isValidPhone(e.target.value)) showErr(phoneIn, phoneErr, '10 dígitos requeridos');
-        else clearErr(phoneIn, phoneErr);
-    });
-
-    emailIn.addEventListener('blur', async (e) => {
-        clearErr(emailIn, emailErr);
-        emailDupErr.style.display = 'none';
-
-        const val = e.target.value.trim();
-        if(!val) return;
-
-        if(!isValidEmail(val)) {
-            showErr(emailIn, emailErr, 'Email inválido');
-            return;
-        }
-
-        if (isFirebaseReady) {
-            const exists = await checkEmail(val);
-            if(exists) {
-                emailDupErr.style.display = 'block';
-                emailIn.classList.add('warning');
-            }
-        }
-    });
-
-    // Limpiar errores al escribir
-    [nameIn, adultsIn, childrenIn].forEach(i => i.addEventListener('input', () => clearErr(i, document.getElementById(`${i.id}Error`))));
-}
-
-// Funciones del Modal
-function openModal() {
-    modal.classList.add('active');
-    document.body.style.overflow = 'hidden';
-    setTimeout(() => nameIn.focus(), 100);
-}
-
-function closeModal() {
-    modal.classList.remove('active');
-    document.body.style.overflow = '';
+    const row = document.createElement('div');
+    row.className = `list-item ${isConfirmed ? 'confirmed' : ''}`;
     
-    // Resetea el formulario y el estado del modal después de la transición
-    setTimeout(() => {
-        thankYou.style.display = 'none';
-        form.style.display = 'block';
-        form.reset();
-        adultsIn.value = 1; childrenIn.value = 0;
-        
-        // Limpia todos los mensajes y clases de error
-        [nameErr, emailErr, emailDupErr, phoneErr, adErr, chErr].forEach(e => e.style.display = 'none');
-        [nameIn, emailIn, phoneIn, adultsIn, childrenIn].forEach(i => i.classList.remove('error', 'warning'));
-        
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Enviar Confirmación';
-        loadingSpinner.style.display = 'none';
-    }, 300);
+    row.innerHTML = `
+      <div class="col-avatar">
+        <div class="avatar-circle">${initials}</div>
+      </div>
+      <div class="col-info">
+        <div class="name">${d.nombre || 'Sin nombre'}</div>
+        <div class="meta">
+          ${d.email ? `<span style="opacity:0.8">${d.email}</span>` : ''}
+          ${d.email && d.telefono ? ' • ' : ''}
+          ${d.telefono ? `<span>${d.telefono}</span>` : ''}
+        </div>
+      </div>
+      <div class="col-guests">
+        <div class="badge-pill">Adultos: <strong>${det.adultos}</strong></div>
+        <div class="badge-pill" style="margin-left:4px">Niños: <strong>${det.ninos}</strong></div>
+      </div>
+      <div class="col-date">${formatFechaHora(d.timestamp)}</div>
+      <div class="col-actions">
+        <button class="btn-ghost btn-edit" title="Editar">${iconEdit}</button>
+        <button class="btn-ghost btn-delete" style="color:var(--danger-text)" title="Eliminar">${iconTrash}</button>
+      </div>
+    `;
+
+    row.querySelector('.btn-edit').addEventListener('click', () => openEditModal(docSnap.id, d));
+    row.querySelector('.btn-delete').addEventListener('click', () => openDeleteModal(docSnap.id));
+
+    listEl.appendChild(row);
+  });
 }
 
-// Manejador de Envío del Formulario
-form.addEventListener('submit', async (e) => {
+// Lógica de Paginación Local y Renderizado
+function getEffectiveDocs() {
+  const searchQuery = document.getElementById('searchInput').value.trim().toLowerCase();
+  let docsToUse = currentDocs;
+
+  // Aplicar filtro si hay una búsqueda activa
+  if (searchQuery) {
+    docsToUse = currentDocs.filter(doc => {
+      const d = doc.data();
+      return (d.nombre || '').toLowerCase().includes(searchQuery) || 
+             (d.email || '').toLowerCase().includes(searchQuery);
+    });
+  }
+  
+  // TODO: Implementar filtro por estado (confirmed/pending) si fuera necesario.
+  return docsToUse;
+}
+
+function renderCurrentPage() {
+  const docsArray = getEffectiveDocs();
+
+  if (docsArray.length === 0) {
+    document.getElementById('confirmacionesList').innerHTML = `<div class="empty-state">No se encontraron registros.</div>`;
+    updateStats([]);
+    return;
+  }
+
+  // Calcular el rango de documentos a mostrar
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  
+  const pageDocs = docsArray.slice(startIndex, endIndex);
+
+  // Renderizar solo la página actual
+  renderPage(pageDocs); 
+  
+  // Actualizar estadísticas con TODOS los documentos no paginados (para los totales)
+  updateStats(currentDocs.map(d => d.data()));
+
+  // Actualizar controles de paginación
+  document.getElementById('pageNumber').textContent = currentPage;
+  document.getElementById('prevPage').disabled = currentPage === 1;
+  document.getElementById('nextPage').disabled = endIndex >= docsArray.length;
+}
+
+function loadNextPage() {
+  const effectiveDocs = getEffectiveDocs();
+  if (currentPage * pageSize < effectiveDocs.length) {
+    currentPage++;
+    renderCurrentPage();
+  }
+}
+
+function loadPrevPage() {
+  if (currentPage > 1) {
+    currentPage--;
+    renderCurrentPage();
+  }
+}
+
+// REALTIME LISTENER (Se mantiene activo para las actualizaciones)
+function startRealtimeListener() {
+  showLoading();
+  
+  // Creamos la query base para escuchar toda la colección (ordenada)
+  const query = db.collection('ejemploprimeracomunion_panel').orderBy('timestamp', 'desc');
+
+  // Configura el listener en tiempo real (onSnapshot)
+  return query.onSnapshot(snapshot => {
+    // 1. Conexión Status
+    document.getElementById('connectionDot').classList.remove('offline');
+    document.getElementById('realtimeStatus').textContent = 'En línea (Realtime)';
+    
+    // 2. Almacenamos todos los documentos
+    currentDocs = snapshot.docs;
+    
+    // 3. Reiniciamos la paginación a la página 1 después de cualquier cambio global
+    currentPage = 1;
+    
+    // 4. Renderizamos (aplicará búsqueda y paginación local)
+    renderCurrentPage(); 
+    
+    // 5. Ocultamos el loader solo después de la primera carga completa
+    hideLoading();
+
+  }, error => {
+    // Manejo de errores de conexión/permisos
+    console.error("Error en la conexión Realtime:", error);
+    document.getElementById('connectionDot').classList.add('offline');
+    document.getElementById('realtimeStatus').textContent = 'Error de conexión';
+    hideLoading();
+    showToast('Error en la conexión Realtime. Datos estáticos.', 'error');
+  });
+}
+
+// ESTADÍSTICAS (Usa todos los datos)
+function updateStats(items) {
+  let totalP = 0, totalA = 0, totalN = 0; 
+  let confirmedCount = 0;
+  let latest = null;
+  
+  items.forEach(d => {
+    const det = calcularDetalle(d);
+    if (det.total > 0) {
+      confirmedCount++;
+    }
+    totalP += det.total;
+    totalA += det.adultos;
+    totalN += det.ninos; 
+    if (d.timestamp && d.timestamp.toDate) {
+      const t = d.timestamp.toDate();
+      if (!latest || t > latest) latest = t;
+    }
+  });
+  
+  document.getElementById('totalConfirmaciones').textContent = confirmedCount; 
+  document.getElementById('totalPersonas').textContent = totalP;
+  document.getElementById('totalAdultos').textContent = totalA;
+  document.getElementById('totalNinos').textContent = totalN; 
+  
+  if(latest) {
+    document.getElementById('lastUpdate').textContent = 'Act: ' + latest.toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit'});
+  }
+}
+
+// MODALES Y SEARCH
+function openDeleteModal(id) {
+  docToDelete = id; 
+  document.getElementById('deleteModal').classList.add('active');
+}
+
+function closeDeleteModal() {
+  document.getElementById('deleteModal').classList.remove('active'); 
+  docToDelete = null;
+}
+
+function openEditModal(id, data) {
+  docToEdit = id;
+  const det = calcularDetalle(data);
+  document.getElementById('editNombre').value = data.nombre || '';
+  document.getElementById('editEmail').value = data.email || '';
+  document.getElementById('editTelefono').value = data.telefono || '';
+  document.getElementById('editAdultos').value = det.adultos;
+  document.getElementById('editNinos').value = det.ninos;
+  document.getElementById('editModal').classList.add('active');
+}
+
+function closeEditModal() {
+  document.getElementById('editModal').classList.remove('active'); 
+  docToEdit = null;
+}
+
+function searchLocal(q) {
+  const clearBtn = document.getElementById('clearSearchBtn');
+  clearBtn.style.display = q ? 'block' : 'none';
+  
+  // Reset a la página 1 para el resultado de la búsqueda
+  currentPage = 1;
+  
+  // Renderiza el array efectivo (que aplicará la búsqueda)
+  renderCurrentPage(); 
+}
+
+async function exportCSV() {
+  showLoading();
+  try {
+    // Para exportar, aún se requiere una llamada de "get()" para asegurar la colección completa
+    const snap = await db.collection('ejemploprimeracomunion_panel').orderBy('timestamp', 'desc').get();
+    const rows = snap.docs.map(d => {
+      const data = d.data(); 
+      const det = calcularDetalle(data);
+      const clean = t => `"${(t||'').replace(/"/g,'""')}"`;
+      return [clean(data.nombre), clean(data.email), det.adultos, det.ninos, clean(formatFechaHora(data.timestamp))].join(',');
+    });
+    const csv = ["Nombre,Email,Adultos,Ninos,Fecha"].join(',') + '\n' + rows.join('\n');
+    const url = URL.createObjectURL(new Blob([csv], {type: 'text/csv;charset=utf-8;'}));
+    const a = document.createElement('a'); 
+    a.href = url; 
+    a.download = 'invitados.csv'; 
+    a.click();
+    showToast('CSV descargado');
+  } catch(e) { 
+    showToast('Error exportando', 'error'); 
+  } finally { 
+    hideLoading(); 
+    document.getElementById('exportModal').classList.remove('active'); 
+  }
+}
+
+// Event Listeners
+function setupEventListeners() {
+  document.getElementById('year').textContent = new Date().getFullYear();
+  
+  // Configurar conexión de red
+  db.enableNetwork().catch(()=>{});
+  
+  // Paginación
+  document.getElementById('nextPage').addEventListener('click', loadNextPage);
+  document.getElementById('prevPage').addEventListener('click', loadPrevPage);
+  document.getElementById('refreshBtn').addEventListener('click', renderCurrentPage); 
+  
+  // Búsqueda
+  document.getElementById('searchInput').addEventListener('input', (e) => {
+    if(searchTimeout) clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => searchLocal(e.target.value.trim()), 300);
+  });
+  
+  document.getElementById('clearSearchBtn').addEventListener('click', () => {
+    document.getElementById('searchInput').value = ''; 
+    searchLocal('');
+  });
+
+  // Modal de eliminación
+  document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
+    if(docToDelete) {
+      await db.collection('ejemploprimeracomunion_panel').doc(docToDelete).delete();
+      showToast('Registro eliminado'); 
+      closeDeleteModal(); 
+    }
+  });
+  
+  document.getElementById('cancelDeleteBtn').addEventListener('click', closeDeleteModal);
+
+  // Modal de edición
+  document.getElementById('editForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-
-    if (!isFirebaseReady) {
-        // En lugar de alert, usamos console.error o un mensaje en el modal
-        console.error("Error: Firebase no está inicializado o autenticado.");
-        return;
+    if(docToEdit) {
+      await db.collection('ejemploprimeracomunion_panel').doc(docToEdit).update({
+        nombre: document.getElementById('editNombre').value,
+        email: document.getElementById('editEmail').value,
+        telefono: document.getElementById('editTelefono').value,
+        adultos: parseInt(document.getElementById('editAdultos').value)||0,
+        ninos: parseInt(document.getElementById('editNinos').value)||0
+      });
+      showToast('Registro actualizado'); 
+      closeEditModal(); 
     }
+  });
+  
+  document.getElementById('closeEditModalBtn').addEventListener('click', closeEditModal);
+  document.getElementById('cancelEditBtn').addEventListener('click', closeEditModal);
+  
+  // Modal de exportación
+  document.getElementById('exportCsvBtn').addEventListener('click', () => {
+    document.getElementById('exportModal').classList.add('active');
+  });
+  
+  document.getElementById('confirmExportBtn').addEventListener('click', exportCSV);
+  document.getElementById('cancelExportBtn').addEventListener('click', () => {
+    document.getElementById('exportModal').classList.remove('active');
+  });
 
-    // Validación Final
-    let valid = true;
-    
-    // Limpiar errores antes de validar
-    [nameIn, emailIn, phoneIn, adultsIn, childrenIn].forEach(i => clearErr(i, document.getElementById(`${i.id}Error`)));
-    emailDupErr.style.display = 'none';
-
-    if(nameIn.value.length < 3) { showErr(nameIn, nameErr, 'Nombre requerido'); valid = false; }
-    
-    const emVal = emailIn.value.trim();
-    if(emVal && !isValidEmail(emVal)) { showErr(emailIn, emailErr, 'Email inválido'); valid = false; }
-    
-    const phoneVal = phoneIn.value;
-    if(phoneVal && !isValidPhone(phoneVal)) { showErr(phoneIn, phoneErr, 'Teléfono inválido'); valid = false; }
-    
-    if(Number(adultsIn.value) < 1) { showErr(adultsIn, adErr, 'Mínimo 1 adulto'); valid = false; }
-    if(Number(childrenIn.value) < 0) { showErr(childrenIn, chErr, 'No negativo'); valid = false; }
-
-    // Revalidación de email duplicado justo antes de enviar
-    if(valid && emVal) {
-        const exists = await checkEmail(emVal);
-        if(exists) {
-            emailDupErr.style.display = 'block';
-            emailIn.classList.add('warning');
-            valid = false;
-        }
+  // Cerrar modales al hacer clic fuera
+  window.onclick = e => { 
+    if(e.target.classList.contains('modal-overlay')) {
+      e.target.classList.remove('active'); 
     }
+  };
+}
 
-    if(!valid) return;
-
-    // Iniciar estado de carga
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Enviando...';
-    loadingSpinner.style.display = 'block';
-
-    // Envío a Firestore
-    try {
-        const rsvpCollection = collection(db, COLLECTION_PATH);
-
-        await addDoc(rsvpCollection, {
-            nombre: nameIn.value.trim(),
-            email: emVal || 'No proporcionado',
-            telefono: phoneVal || 'No proporcionado',
-            adultos: Number(adultsIn.value),
-            ninos: Number(childrenIn.value),
-            dispositivo: navigator.userAgent,
-            pantalla: `${window.innerWidth}x${window.innerHeight}`,
-            fechaRegistro: new Date().toLocaleString('es-MX'),
-            timestamp: serverTimestamp()
-        });
-        
-        // Éxito
-        form.style.display = 'none';
-        thankYou.style.display = 'block';
-        loadingSpinner.style.display = 'none';
-        setTimeout(closeModal, 2000);
-
-    } catch(err) {
-        console.error("Error al guardar RSVP:", err);
-        // Mostrar error en el modal (sustituir por un mensaje temporal en el futuro)
-        // Por ahora, solo restaura el botón
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Error. Intenta de nuevo.';
-        loadingSpinner.style.display = 'none';
-        setTimeout(() => submitBtn.textContent = 'Enviar Confirmación', 2000);
-    }
-});
-
-
-// --- Evento DOMContentLoaded para inicializar la app ---
-document.addEventListener('DOMContentLoaded', async () => {
-    // 1. Mostrar la fecha dinámica
-    const dynamicDateElement = document.getElementById('dynamicDate');
-    if (dynamicDateElement) {
-        dynamicDateElement.textContent = getDynamicDate();
-    }
-    
-    // 2. Inicializar Firebase
-    await initializeFirebase();
-    
-    // 3. Configurar Event Listeners del formulario
-    setupInputListeners();
-    openBtn.addEventListener('click', (e) => { e.preventDefault(); openModal(); });
-    closeBtn.addEventListener('click', closeModal);
-    modal.addEventListener('click', (e) => { if(e.target === modal) closeModal(); });
+// Inicializar aplicación
+document.addEventListener('DOMContentLoaded', () => {
+  setupEventListeners();
+  
+  // Iniciar el listener de tiempo real
+  startRealtimeListener();
 });
